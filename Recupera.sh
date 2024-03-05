@@ -3,6 +3,7 @@
 function usage () {
     echo "Ús Dolent:"
     echo "  $0 [-D] fitxer.tgz file.txt [ files.txt ... ] directori"
+    exit 1
 }
 
 # Variables d'opcions
@@ -11,7 +12,6 @@ D_MODE=0
 # Comprobar que el nombre d'args es apropiat 
 if [[ $# -lt 3 ]]; then
     usage
-    exit 1
 fi
 
 # On comencen els arxius a extreure
@@ -26,7 +26,6 @@ while getopts ":D" OPT; do
             ;;
         "?") 
             usage
-            exit 1
         ;;
     esac
 done

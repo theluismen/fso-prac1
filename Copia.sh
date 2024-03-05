@@ -1,60 +1,71 @@
 #!/bin/bash
 
-# Funcio que mostra cóm s'ha d'emprar l'script
+# Funció per mostrar l'ús del script
 function usage () {
-    echo "$1"
-    echo "Ús de l'script:"
-    echo "  $0 [-k] [-D] fitxer1 [fitxer2] ... fitxer.tar"
+    echo "Ús Dolent:"
+    echo "  $0 [-k] [-D] fitxer.tgz file.txt [ files.txt ... ] directori"
+    exit 1
 }
 
-# Funcio comproba l'ordre de les opcions
-function check_order () {
-    echo "OPTIND: $1"
-    echo "Cursor: $cursor"
-    if [[ $1 -gt $cursor ]]; then
-        echo mal orden;
-    else
-        if [[ $1 == $cursor ]]; then
-            (($cursor+1))
-        fi
+# Comprova els arguments
+if [ $# -lt 2 ]; then
+    usage
+fi
+
+# Variables per opcions
+K=0
+D=0
+file_bgn=1
+# Processa les opcions
+while getopts ":kD" OPT; do
+    case $OPT in
+        k) K=1; ((files_bgn++));;
+        D) D=1; ((files_bgn++));;
+        *) usage ;;
+    esac
+done
+
+# Nom del fitxer de sortida L'arxiu $fitxer_sortida ja existeix.
+gz=${@:$#}
+files=${@:files_bgn+1:$#-files_bgn-1}
+if [[ ! -e $gz ]]; then
+    if [[ $D -eq 1 ]]; then
+        echo "[-D] - Se crearia el archivo comprimido: $gz."
+    else 
+        tar zcf $gz $files
     fi
-}
-
-# date +%Y%m%d
-SAFEDUP_MODE=0
-DRYRUN_MODE=0
-
-OPTSTR=":kD"
-
-# Controlar nom d'arguments
-if [[ $# -lt 2 ]]; then 
-    usage "[!] - Hi falten arguments."
     exit 1
 fi
 
-cursor=1
-files_init=1
-while getopts $OPTSTR OPT; do
-    case $OPT in
-        "k")
-            SAFEDUP_MODE=1
-            # echo k
-            # check_order $((OPTIND-1))
-            ((files_init++))
-            ;;
-        "D")
-            DRYRUN_MODE=1
-            # echo D
-            # check_order $((OPTIND-1))
-            ((files_init++))
-            ;;
-        "?")
-            usage "[!] - Parametre desconegut $OPTARG"
-            exit 1
-            ;;
-    esac
+# # Itera pels fitxers i directoris d'entrada
+for fitxer in $files; do
+    if ! tar --list -zf $gz $file &> /dev/null; then
+        
+    else
+    
+    fi
+    # Comprova si el fitxer és un directori
+    if [ -d "$fitxer" ]; then
+        if [ $K -eq 1 ]; then
+            tar rf "$fitxer_sortida" --transform="s|^\./|$fitxer.$(date +%Y.%m.%d:%H.%M.%S)/|" "$fitxer"
+        else
+            tar rf "$fitxer_sortida" "$fitxer"
+        fi
+    else
+        # Comprova si el fitxer ja existeix a l'arxiu comprimit
+        if tar tf "$fitxer_sortida" | grep -q "$fitxer"; then
+            if [ $K -eq 1 ]; then
+                nom_fitxer=$(basename "$fitxer")
+                data_modificacio=$(date -r "$fitxer" +%Y.%m.%d:%H.%M.%S)
+                tar rf "$fitxer_sortida" --transform="s|^\./|$nom_fitxer.$data_modificacio/|" "$fitxer"
+            else
+                echo "El fitxer $fitxer ja existeix a l'arxiu comprimit."
+            fi
+        else
+            tar rf "$fitxer_sortida" "$fitxer"
+        fi
+    fi
 done
-echo $files_init
-ARCHIVOS=${@:files_init:$#-$files_init}
-echo ${ARCHIVOS[@]}
-# echo "$@" $#
+
+# echo "S'ha afegit correctament tots els fitxers a l'arxiu comprimit."
+
