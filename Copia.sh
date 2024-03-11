@@ -25,9 +25,11 @@ while getopts ":kD" OPT; do
     esac
 done
 
-# Nom del fitxer de sortida L'arxiu $fitxer_sortida ja existeix.
+# Sacar info de la linea de comandos
 gz=${@:$#}
 files=${@:files_bgn+1:$#-files_bgn-1}
+
+# Comprobar si el comprimido existe
 if [[ ! -e $gz ]]; then
     if [[ $D -eq 1 ]]; then
         echo "[-D] - Se crearia el archivo comprimido: $gz."
@@ -38,33 +40,38 @@ if [[ ! -e $gz ]]; then
 fi
 
 # # Itera pels fitxers i directoris d'entrada
-for fitxer in $files; do
-    if ! tar --list -zf $gz $file &> /dev/null; then
-        
-    else
+for file in $files; do
+    if ! tar ztf $gz $file &> /dev/null; then #No es troba el fitxer
+        tmpd="src"
+        [[ ! -d $tmpd ]] && mkdir $tmpd
+        tar xf $gz -C $tmpd
+        cp $file $tmpd/$file
+        tar zcf 2.$gz * -C $tmpd
+        # rm -rf $tmpd
+    # else
     
     fi
     # Comprova si el fitxer és un directori
-    if [ -d "$fitxer" ]; then
-        if [ $K -eq 1 ]; then
-            tar rf "$fitxer_sortida" --transform="s|^\./|$fitxer.$(date +%Y.%m.%d:%H.%M.%S)/|" "$fitxer"
-        else
-            tar rf "$fitxer_sortida" "$fitxer"
-        fi
-    else
-        # Comprova si el fitxer ja existeix a l'arxiu comprimit
-        if tar tf "$fitxer_sortida" | grep -q "$fitxer"; then
-            if [ $K -eq 1 ]; then
-                nom_fitxer=$(basename "$fitxer")
-                data_modificacio=$(date -r "$fitxer" +%Y.%m.%d:%H.%M.%S)
-                tar rf "$fitxer_sortida" --transform="s|^\./|$nom_fitxer.$data_modificacio/|" "$fitxer"
-            else
-                echo "El fitxer $fitxer ja existeix a l'arxiu comprimit."
-            fi
-        else
-            tar rf "$fitxer_sortida" "$fitxer"
-        fi
-    fi
+    # if [ -d "$fitxer" ]; then
+    #     if [ $K -eq 1 ]; then
+    #         tar rf "$fitxer_sortida" --transform="s|^\./|$fitxer.$(date +%Y.%m.%d:%H.%M.%S)/|" "$fitxer"
+    #     else
+    #         tar rf "$fitxer_sortida" "$fitxer"
+    #     fi
+    # else
+    #     # Comprova si el fitxer ja existeix a l'arxiu comprimit
+    #     if tar tf "$fitxer_sortida" | grep -q "$fitxer"; then
+    #         if [ $K -eq 1 ]; then
+    #             nom_fitxer=$(basename "$fitxer")
+    #             data_modificacio=$(date -r "$fitxer" +%Y.%m.%d:%H.%M.%S)
+    #             tar rf "$fitxer_sortida" --transform="s|^\./|$nom_fitxer.$data_modificacio/|" "$fitxer"
+    #         else
+    #             echo "El fitxer $fitxer ja existeix a l'arxiu comprimit."
+    #         fi
+    #     else
+    #         tar rf "$fitxer_sortida" "$fitxer"
+    #     fi
+    # fi
 done
 
 # echo "S'ha afegit correctament tots els fitxers a l'arxiu comprimit."
